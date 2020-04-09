@@ -146,18 +146,31 @@ realize ge0_limit_post. apply ge0_limit_post. qed.
 
    key_gen and enc are probabilistic, but dec is deterministic
 
-   the module has no state *)
+    the module has no state *)
 
-module Enc : ENC = {
+    (* Start adding/editing things here *)
+
+  type group.
+
+  type exp = Exp.word.
+
+  op exp0 : exp = Exp.zerow.
+
+  op dexp : exp distr = Exp.DWord.dunifin.
+
+  module Enc : ENC = {
+    var g : group
+    
   proc key_gen() : key = {
-    var k : key;
-    k <$ dkey;
-    return k;
+    var q : exp
+    q <$ dexp;
+    return (g ^ q, q);
   }
 
-  proc enc(k : key, x : text) : cipher = {
-    var u : text;
-    u <$ dtext;
+  proc enc(q : exp, x : text) : cipher = {
+    var r : exp;
+      r <$ dexp;
+    
     return (u, x +^ F k u);
   }
 
