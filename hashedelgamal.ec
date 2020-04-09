@@ -96,11 +96,22 @@ module HEG (RO : RO) ={
   }
 
   proc enc(e : exp, t : text) : group {
+    var r : exp;
+    r <$ dexp;
     
+    (* Need to define pubk and privk. pubk = g ^ q and privk = q *)
+    u <@ RO.f(pubk ^ r);
+
+    (*pubk ^ r = (g ^ q) ^ r = g ^ (q * r)*)
+    return (g ^ r, t +^ u);
 
   }
 
   proc dec(e : exp, g : group) : text {
+    u <@ RO.f(x ^ privk);
+    return v +^ u;
+    (* (g ^ r) ^ q = g ^ (r * q) = g ^ (q * r) *)
+    (*t +^ u +^ u = t =^ textO = t *)
   }
 
 }
