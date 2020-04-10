@@ -38,7 +38,7 @@ axiom grexpA (q1 q2 : exp) : (g ^ q1) ^ q2 = g ^ (q1 +* q2).
 
 lemma grexpAll (x : group) (q1 q2 : exp) : (x ^ q1) ^q2 = x ^ (q1 +* q2).
     proof.
-      admit.
+      admit. 
     
   qed.
 
@@ -100,7 +100,7 @@ module HEG (RO : RO) ={
     r <$ dexp;
     
     (* Need to define pubk and privk. pubk = g ^ q and privk = q *)
-    u <@ RO.f(pubk ^ r);
+    u <@ RO.f(g ^ e ^ r);
 
     (*pubk ^ r = (g ^ q) ^ r = g ^ (q * r)*)
     return (g ^ r, t +^ u);
