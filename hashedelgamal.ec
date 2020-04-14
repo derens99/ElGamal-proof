@@ -47,13 +47,15 @@ axiom inj (q1 q2 : exp) : g^q1 = g^q2 => q1 = q2.
 
 op gen_rel (x : group)(q : exp) : bool = x = g^q.
 
-op log (x : group) : exp = choiceb (gen_rel x) e.
+(*op log (x : group) : exp = choiceb (gen_rel x) e.*)
 
-lemma gen_log : cancel gen log.
+print cancel.
+
+(*lemma gen_log : cancel gen log.
     proof.
       rewrite /gen /log /cancel => q.
     
-  qed.
+  qed.*)
   
 
 
@@ -88,8 +90,14 @@ axiom dtext_ll : is_lossless dtext.
 
 type cipher = group * text.
 
+module type RO = {
+  proc * init() : unit
+
+  proc f(x : group) : text
+}.
+
 (* Defining Correctness *)
-module type ENC = {
+module type ENC (*(RO : RO)*) = {
   proc key_gen() : group * exp
 
   proc enc(pubk : group, t : text) : cipher
@@ -101,7 +109,7 @@ module type ENC = {
 
     is correct if it the original input = final output when run through all funcitons with probability 1 *)
 
-module Cor (Enc : ENC) = {
+module Cor (Enc : ENC, RO : RO) = {
   proc main(x : text) : bool = {
   var pubk : group; var privk : exp; var c : cipher; var y : text;
     
@@ -116,11 +124,7 @@ module Cor (Enc : ENC) = {
 
 (* concrete example of elgamal *)
       (* Random Oracle *)
-module type RO = {
-  proc * init() : unit
 
-  proc f(x : group) : text
-}.
 
 module RO : RO = {
   var mp : (group, text) fmap (* finite map, table *)
