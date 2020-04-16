@@ -40,6 +40,8 @@ op (^) : group -> exp -> group.
 
 axiom generated (x : group) : exists (q : exp),  x = g ^ q.
 
+axiom generated2 (x : group) (z : exp) : exists (q : exp), x ^ z = g ^ q ^ z.
+
 axiom grexpA (q1 q2 : exp) : (g ^ q1) ^ q2 = g ^ (q1 * q2).
 
 op gen (q : exp) = g ^ q.
@@ -47,22 +49,31 @@ axiom inj (q1 q2 : exp) : g^q1 = g^q2 => q1 = q2.
 
 op gen_rel (x : group)(q : exp) : bool = x = g^q.
 
-(*op log (x : group) : exp = choiceb (gen_rel x) e.*)
+op e : exp.
+
+op log (x : group) : exp = choiceb (gen_rel x) e.
 
 print cancel.
 
-(*lemma gen_log : cancel gen log.
+lemma gen_log : cancel gen log.
     proof.
       rewrite /gen /log /cancel => q.
-    
-  qed.*)
+      have choice_g2q := choicebP ( gen_rel(g ^ q)) e.
+      have /choice_g2q @/gen_rel/inj {2}-> //:
+      exists(q' : exp), gen_rel (g^q) q'
+      by rewrite /gen_rel; by exists q.        
+  qed.
   
-
+lemma log_gen : cancel log gen.
+    proof.
+      rewrite /gen /log /cancel => x.
+      have @/gen_rel <-// := choicebP ( gen_rel x) e.
+      rewrite generated.
+    qed.
 
 lemma grexpAll (x : group) (q1 q2 : exp) : (x ^ q1) ^q2 = x ^ (q1 * q2).
     proof.
-      admit. 
-    
+    admit.
   qed.
 
       (* text definitions *)
@@ -109,7 +120,7 @@ module type ENC (*(RO : RO)*) = {
 
     is correct if it the original input = final output when run through all funcitons with probability 1 *)
 
-module Cor (Enc : ENC, RO : RO) = {
+module Cor (Enc : ENC) = {
   proc main(x : text) : bool = {
   var pubk : group; var privk : exp; var c : cipher; var y : text;
     
@@ -186,8 +197,44 @@ lemma enc_stateless (g1 g2 : glob HEG) : g1 = g2.
   qed.
 
       (* prove encryption scheme is correct *)
-lemma correctness : phoare[Cor(HEG).main : true ==> res] = 1%r.
+lemma correctness : phoare[Cor(HEG(RO)).main : true ==> res] = 1%r.
     proof.
+      proc.
+      inline*.
+          
+      seq 1 : true.
+      rnd.
+      auto.
+      rnd.
+      auto.
+      progress.
+      apply dexp_ll.
+      seq 5 : true.
+      wp.
+      rnd.
+      wp.
+      auto.
+      wp.
+      rnd.
+      auto.
+      progress.
+      apply dexp_ll.
+      if.
+      seq 8 : true.
+      wp.
+      rnd.
+      auto.
+      wp.
+      rnd.
+      auto.
+      progress.
+      apply dtext_ll.
+      if.
+      wp.
+      rnd.
+      auto.    
+      progress.
+    
     
   qed.
   
