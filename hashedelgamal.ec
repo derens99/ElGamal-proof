@@ -205,9 +205,9 @@ lemma correctness : phoare[Cor(HEG(RO)).main : true ==> res] = 1%r.
     proof.
       proc.
     inline*.
-    seq 13: (x1 = g ^ (q * r) /\ x2 = x1 /\ RO.mp.[x1] = Some u /\ u0 = t +^ u).  
+    seq 13: (x1 = g ^ (q * r) /\ x2 = x1 /\ t = x /\ RO.mp.[x1] = Some u /\ u0 = t +^ u).  
     auto.
-    seq 4: (pubk0 = g ^ q /\ privk = q).
+    seq 3: (pubk0 = g ^ q /\ privk = q).
     wp.
     auto.
     wp.
@@ -215,7 +215,7 @@ lemma correctness : phoare[Cor(HEG(RO)).main : true ==> res] = 1%r.
     progress.
     apply dexp_ll.
     wp.
-    seq 1: (pubk0 = g ^ q /\ privk = q).
+    seq 2: (pubk0 = g ^ q /\ privk = q /\ t = x).
     auto.
     auto.
     progress. 
@@ -226,7 +226,7 @@ lemma correctness : phoare[Cor(HEG(RO)).main : true ==> res] = 1%r.
     progress.
     apply dtext_ll.
     by rewrite grexpA.
-    by rewrite !grexpA expC.
+      by rewrite !grexpA expC.    
     rewrite get_set_sameE.
     by rewrite oget_some.
     auto.
@@ -252,7 +252,7 @@ auto.
     rewrite- textA.
     rewrite textR.
     rewrite textC textI.
-    
+    trivial.
     hoare.
     auto.
     seq 1: true.
