@@ -73,7 +73,11 @@ lemma log_gen : cancel log gen.
 
 lemma grexpAll (x : group) (q1 q2 : exp) : (x ^ q1) ^q2 = x ^ (q1 * q2).
     proof.
-    admit.
+      have ->: x = g ^ log x.
+      have ->: g ^ log x = gen (log x).    
+      by rewrite /gen.
+      by rewrite log_gen.
+     by rewrite !grexpA expA.
   qed.
 
       (* text definitions *)
@@ -200,43 +204,82 @@ lemma enc_stateless (g1 g2 : glob HEG) : g1 = g2.
 lemma correctness : phoare[Cor(HEG(RO)).main : true ==> res] = 1%r.
     proof.
       proc.
-      inline*.
-          
-      seq 1 : true.
-      rnd.
-      auto.
-      rnd.
-      auto.
+    inline*.
+    seq 13: (x1 = g ^ (q * r) /\ x2 = x1 /\ RO.mp.[x1] = Some u /\ u0 = t +^ u).  
+    auto.
+    seq 4: (pubk0 = g ^ q /\ privk = q).
+    wp.
+    auto.
+    wp.
+    auto.
+    progress.
+    apply dexp_ll.
+    wp.
+    seq 1: (pubk0 = g ^ q /\ privk = q).
+    auto.
+    auto.
+    progress. 
+    apply dexp_ll.
+    sp.
+    if.
+    auto.
+    progress.
+    apply dtext_ll.
+    by rewrite grexpA.
+    by rewrite !grexpA expC.
+    rewrite get_set_sameE.
+    by rewrite oget_some.
+    auto.
+    progress.
+    by rewrite grexpA.
+    by rewrite !grexpA expC.
+    by rewrite get_some.
+    hoare.
+    simplify.
+    auto.
+    trivial.
+    hoare.
+    auto.
+    trivial.
+    rcondf 1.
+auto; progress.
+smt().
+auto.
       progress.
-      apply dexp_ll.
-      seq 5 : true.
-      wp.
-      rnd.
-      wp.
-      auto.
-      wp.
-      rnd.
-      auto.
-      progress.
-      apply dexp_ll.
-      if.
-      seq 8 : true.
-      wp.
-      rnd.
-      auto.
-      wp.
-      rnd.
-      auto.
-      progress.
-      apply dtext_ll.
-      if.
-      wp.
-      rnd.
-      auto.    
-      progress.
+    rewrite H oget_some.
+      rewrite -textA.
+      rewrite -textC.
+    rewrite- textA.
+    rewrite textR.
+    rewrite textC textI.
     
-    
+    hoare.
+    auto.
+    seq 1: true.
+    auto.
+    sp.
+    seq 1: (privk = q /\ pubk = g ^ q /\ pubk0 = pubk /\ t = x).
+    auto.
+    sp.
+    if.
+    auto.
+    progress.
+     by rewrite grexpA.
+    by rewrite !grexpA expC.
+      rewrite get_some.
+    search  dom.
+    smt. (*Stuck on exact lemma to use*)
+    by rewrite get_set_sameE oget_some.
+    auto.
+    progress.
+    rewrite grexpA.
+    auto.
+    by rewrite !grexpA expC.
+    by rewrite get_some.
+    trivial.
   qed.
+
+  
   
 
 
