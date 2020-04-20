@@ -1,6 +1,6 @@
 (* Hashed el'gamal proof *)
 
-require import AllCore Distr SmtMap.
+require import AllCore Distr SmtMap DBool.
 
 type group.
 
@@ -279,7 +279,37 @@ auto.
     trivial.
   qed.
 
+
+  module type ADV (RO : RO) = {
+    proc * choose(pubk : group) : text * text {RO.f}
+
+    proc guess(c : cipher) : bool {RO.f}
+  }.
+
   
+  module INDCPA (RO : RO, Adv : ADV) = {
+    module A = Adv(RO)
+    module Enc = HEG(RO)
+
+    proc main() : bool = {
+      var x1, x2 : text; var c : cipher; var choice, guess : bool;
+      var pubk : group; var privk : exp;
+
+      (* get pubk, similar to initializing EO *)
+      (pubk, privk) <@ Enc.key_gen();
+      
+
+      (x1,x2) <@ A.choose(pubk);
+
+      choice <$ {0,1};
+        c <@ Enc.enc(pubk, choice ? x1 : x2);
+
+        guess <@ A.guess(c);
+
+      return choice = guess;
+    }
+  }.
+
   
 
 
