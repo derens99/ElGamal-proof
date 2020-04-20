@@ -287,7 +287,7 @@ auto.
   }.
 
   
-  module INDCPA (RO : RO, Adv : ADV) = {
+  module INDCPA (Adv : ADV) = {
     module A = Adv(RO)
     module Enc = HEG(RO)
 
