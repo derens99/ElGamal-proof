@@ -1,6 +1,6 @@
 (* Hashed el'gamal proof *)
 
-require import AllCore Distr SmtMap DBool.
+require import AllCore Distr SmtMap DBool FSet.
 
 type group.
 
@@ -112,30 +112,13 @@ module type RO = {
 }.
 
 (* Defining Correctness *)
-module type ENC (*(RO : RO)*) = {
+module type ENC (RO : RO) = {
   proc key_gen() : group * exp
 
-  proc enc(pubk : group, t : text) : cipher
+  proc enc(pubk : group, t : text) : cipher {RO.f}
 
-  proc dec(privk : exp, c : cipher) : text
+  proc dec(privk : exp, c : cipher) : text {RO.f}
 }.
-
-(* module to check for correctness of encryption scheme.
-
-    is correct if it the original input = final output when run through all funcitons with probability 1 *)
-
-module Cor (Enc : ENC) = {
-  proc main(x : text) : bool = {
-  var pubk : group; var privk : exp; var c : cipher; var y : text;
-    
-    (pubk, privk) <@ Enc.key_gen();
-      c <@ Enc.enc(pubk, x);
-      y <@ Enc.dec(privk, c);
-    return x = y;
-  }
-  
-}.
-
 
 (* concrete example of elgamal *)
       (* Random Oracle *)
@@ -158,8 +141,26 @@ module RO : RO = {
   }
 }.
 
+(* module to check for correctness of encryption scheme.
 
-module HEG (RO : RO) : ENC ={
+    is correct if it the original input = final output when run through all funcitons with probability 1 *)
+
+module Cor (Enc : ENC) = {
+  module E = Enc(RO)
+  
+  proc main(x : text) : bool = {
+  var pubk : group; var privk : exp; var c : cipher; var y : text;
+    
+    (pubk, privk) <@ E.key_gen();
+      c <@ E.enc(pubk, x);
+      y <@ E.dec(privk, c);
+    return x = y;
+  }
+  
+}.
+
+
+module (HEG : ENC) (RO : RO) ={
   proc key_gen() : group * exp = {
     var q : exp;
     q <$ dexp;
@@ -201,7 +202,7 @@ lemma enc_stateless (g1 g2 : glob HEG) : g1 = g2.
   qed.
 
       (* prove encryption scheme is correct *)
-lemma correctness : phoare[Cor(HEG(RO)).main : true ==> res] = 1%r.
+lemma correctness : phoare[Cor(HEG).main : true ==> res] = 1%r.
     proof.
       proc.
     inline*.
@@ -268,7 +269,7 @@ auto.
     by rewrite !grexpA expC.
       rewrite get_some.
     search  dom.
-    smt. (*Stuck on exact lemma to use*)
+    smt(mem_set).
     by rewrite get_set_sameE oget_some.
     auto.
     progress.
@@ -311,6 +312,84 @@ auto.
   }.
 
   
+  module type LCDH_ADV = {
+    proc main(x1 x2: group) : group fset
+  }.
 
+  module LCDH (Adv : LCDH_ADV) = {
+    proc main() : bool = {
+    var q1, q2 : exp;
+    var ys : group fset;
+    q1 <$ dexp; q2 <$ dexp;
+    ys <@ Adv.main(g^q1, g^q2);
+      return mem ys (g^ (q1*q2));
+      }
+    }.
 
+module RO_track : RO = {
+  var mp : (group, text) fmap (* finite map, table *)
+  var badHappened : bool
+
+  proc init() : unit = {
+    mp <- empty;  (* empty map *)
+  }
+
+  proc f(x : group) : text = {
+      var y : text;
+      if(x \in mp){
+        badHappened <- true;
+      }
+    if (x \notin mp) { (* not in mp's domain *)
+      y <$ dtext;   (* updating mp so as before but value of *)
+      mp.[x] <- y;  (* x is what we randomly picked *)
+    }
+    return oget mp.[x]; (* mp.[x] is either None or Some t *)
+  }
+}.
+  
+ module G1 (Adv : ADV) = {
+    module A = Adv(RO_track)
+    module Enc = HEG(RO_track)
+
+    proc main() : bool = {
+      var x1, x2 : text; var c : cipher; var choice, guess : bool;
+      var pubk, x : group; var privk : exp;
+       var r : exp;
+        var u,y,t : text;
+
+      (* key_gen but inlined *)
+       privk <$ dexp;
+      pubk <- g ^ privk;
+      
+
+      (x1,x2) <@ A.choose(pubk);
+
+        choice <$ {0,1};
+
+        (* enc Inlined *)
+       
+        t <- (choice ? x1 : x2);
+        r <$ dexp;
+      (* randomly choosing a u inlined *)
+        u <@ RO.f(pubk ^ r);
+
+        x <- pubk ^ r;
+      
+      (* not sure how to access the same mp while inlining the RO, I think RO.mp works properly *)
+        if (x \notin RO.mp) { (* not in mp's domain *)
+           y <$ dtext;   (* updating mp so as before but value of *)
+           RO.mp.[x] <- y;  (* x is what we randomly picked *)
+        }
+
+      u <- oget RO.mp.[x]; (* mp.[x] is either None or Some t *)
+
+    
+
+    c <- (g ^ r, t +^ u);
+
+        guess <@ A.guess(c);
+
+      return choice = guess;
+    }
+  }.
 
