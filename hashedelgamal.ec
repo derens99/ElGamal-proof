@@ -429,19 +429,18 @@ local module G1 = {
         t <- (choice ? x1 : x2);
       (* randomly choosing a u inlined *)
 (*
-        u <@ RO.f(pubk ^ r);
+        u <@ RO.f(pubk ^ r); u was just g ^ (q1 * q2)
 *)
-      (* not sure how to access the same mp while inlining the RO, I think RO.mp works properly *)
-        if (g ^ (q1 * q2) \notin RO_track.mp) { (* not in mp's domain *)
-           y <$ dtext;   (* updating mp so as before but value of *)
-           RO_track.mp.[g ^ (q1 * q2)] <- y;  (* x is what we randomly picked *)
-        }
+      if (g ^ (q1 * q2) \notin RO_track.mp) { (* not in mp's domain *)
+         y <$ dtext;   (* updating mp so as before but value of *)
+         RO_track.mp.[g ^ (q1 * q2)] <- y;  (* x is what we randomly picked *)
+      }
 
       u <- oget RO_track.mp.[g ^ (q1 * q2)]; (* mp.[x] is either None or Some t *)
 
-    c <- (g ^ q2, t +^ u);
+      c <- (g ^ q2, t +^ u);
 
-        guess <@ A.guess(c);
+      guess <@ A.guess(c);
 
       return choice = guess;
     }
@@ -449,9 +448,43 @@ local module G1 = {
 
 local lemma INDCPA_HEG_G1 &m :
   Pr[INDCPA(HEG, Adv).main() @ &m : res] = Pr[G1.main() @ &m : res].
-proof.
-admit.
-(* use inline, inline*, swap{1} 2 3, swap{2} 2 -1 *)
+  proof.
+  byequiv => //.
+    proc.
+    inline*.
+swap{1} 1 1.  
+    seq 1 1 : true.
+    rnd.
+    auto.
+    swap{2} 1 1.
+  sp.
+    seq 0 1 : true.
+    rnd{2}.
+    auto.
+    progress.
+    rewrite dexp_ll.  
+    sp.
+    seq 1 1 : true.
+    call(_ : true).
+    proc.
+    if{2}.
+    sp.
+    if.
+    progress.
+  admit.
+    admit.
+    wp.
+    rnd.
+    auto.
+    progress.
+  search oget "_.[_<-_]".
+  admit.
+    admit.
+    admit.
+    admit.
+    admit. 
+
+    (* use inline, inline*, swap{1} 2 3, swap{2} 2 -1 *)
 qed.
 
 (* to use up to bad reasoning... *)
@@ -474,24 +507,13 @@ local module G2 = {
 
       (x1,x2) <@ A.choose(g ^ q1);
 
-        choice <$ {0,1};
+      choice <$ {0,1};
 
-        (* enc Inlined *)
+      
+      y <$ dtext;   
+      c <- (g ^ q2, t +^ y);
 
-      (* randomly choosing a u inlined *)
-(*
-        u <@ RO.f(pubk ^ r);
-*)
-      (* not sure how to access the same mp while inlining the RO, I think RO.mp works properly *)
-
-           y <$ dtext;   (* updating mp so as before but value of *)
-(*
-           RO_track.mp.[g ^ (q1 * q2)] <- y;  (* x is what we randomly picked *)
-*)
-
-    c <- (g ^ q2, t +^ y);
-
-        guess <@ A.guess(c);
+      guess <@ A.guess(c);
 
       return choice = guess;
     }
@@ -505,7 +527,58 @@ local lemma G1_G2_eq :
         ={RO_track.badHappened} /\
         (! RO_track.badHappened{1} => ={res})].
 proof.
-admit. (* look at Sym encryption example, where I first use up to bad
+  proc.
+  seq 5 5 : (={x1,x2,RO_track.mp}).
+  wp.
+  rnd.
+  rnd.
+  auto.
+  progress.
+  admit.
+  admit.
+
+  call(_ : ={RO_track.bad_grp, RO_track.mp}).
+  proc.
+  if.
+  progress.
+  sp.
+  if.
+  progress.
+  wp.
+  rnd.
+  auto.
+  auto.
+  if.
+  progress.
+  wp.
+  rnd.
+  auto.
+  auto.
+seq 1 1 : (={RO_track.bad_grp, RO_track.mp}).
+call(_ : (={RO_track.bad_grp, RO_track.mp})).
+  proc.
+  if.
+  progress.
+  sp.
+  if.
+  progress.
+  wp.
+  rnd.
+  auto.
+  auto.
+  if.
+  progress.
+  wp.
+  rnd.
+  auto.
+  auto.
+  auto.
+  progress.
+  admit.
+  admit.
+  admit.
+
+ (* look at Sym encryption example, where I first use up to bad
           reasoning *)
 qed.
 
@@ -513,6 +586,9 @@ local lemma G2_bad_ub &m :
   Pr[G2.main() @ &m : RO_track.badHappened] =
   Pr[LCDH(Adv2LCDHAdv(Adv)).main() @ &m : res].
 proof.
+byphoare => //.
+  proc.
+
 admit.
 qed.
 
@@ -551,7 +627,7 @@ local module G3 = {
 *)
         y <$ dtext;   (* updating mp so as before but value of *)
 
-        c <- (g ^ q2, t +^ y); (* because y is one-time pad *)
+        c <- (g ^ q2, y); (* because y is one-time pad *)
 
         guess <@ A.guess(c);
 
@@ -561,14 +637,87 @@ local module G3 = {
 
 local lemma G2_G3 &m :
   Pr[G2.main() @ &m : res] = Pr[G3.main() @ &m : res].
-proof.
-admit.  (* one-time pad, just like in labs *)
+  proof.
+  byequiv => //.
+    proc.
+  seq 5 5 : (={q1,q2, RO_track.bad_grp, RO_track.mp}).
+    wp.
+    rnd.
+    rnd.
+    auto. 
+    seq 1 1 : (={q1,q2, RO_track.bad_grp, RO_track.mp}).
+    call(_ : ={RO_track.bad_grp, RO_track.mp}).
+    proc.
+    if.
+    progress.
+    sp.
+    if.
+    progress.
+    wp.
+    rnd.
+    auto.
+    auto.
+    if.
+    progress.
+    wp.
+    rnd.
+    auto.
+    auto.
+    auto.
+    progress.  
+   seq 3 3 : (={q1, q2, c, RO_track.bad_grp, RO_track.mp, choice}).
+    wp.
+    rnd.
+    rnd.
+    auto.
+    progress.
+  (* one time pad refresher *)
+    admit.
+    call(_ : ={RO_track.bad_grp, RO_track.mp}).
+    proc.
+    if.
+    progress.
+    sp.
+    if.
+    progress.
+    wp.
+    rnd.
+    auto.
+    auto.
+    if.
+    progress.
+    wp.
+    rnd.
+    auto.
+    auto.
+    auto.
+    progress.
+    admit.
+    (* one-time pad, just like in labs *)
 qed.
 
 local lemma G3_true &m :
   Pr[G3.main() @ &m : res] = 1%r / 2%r.
-proof.
-admit.
+  proof.
+  byphoare => //.
+    proc.
+    inline*.  
+    seq 5 : (true) (1%r/2%r).
+    wp.
+    rnd.
+    rnd.
+    skip.
+    progress.
+    wp.
+    rnd.
+    rnd.
+    auto.
+    progress.
+  admit.
+    admit.
+    admit.
+    admit.
+  admit.
 qed.
 
 (* sequence of games:
@@ -579,7 +728,12 @@ INDCPA(HEG, Adv) <-> G1 <-> G2 <-> G3 = 1%r/2%r
 lemma INDCPA_Sec &m :
   `|Pr[INDCPA(HEG, Adv).main() @ &m : res] - 1%r / 2%r| <=
   Pr[LCDH(Adv2LCDHAdv(Adv)).main() @ &m : res].
-proof.
+  proof.
+  byphoare => //.
+    proc.
+    call(_: true).
+    admit.
+  
 admit.
 qed.
 
