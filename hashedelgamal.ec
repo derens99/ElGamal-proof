@@ -452,39 +452,90 @@ local lemma INDCPA_HEG_G1 &m :
   byequiv => //.
     proc.
     inline*.
-swap{1} 1 1.  
-    seq 1 1 : true.
+    swap{2} 3 -2.
+  swap{1} 8 -5.
+    sp.
+    seq 2 2 : (q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2}).
+    wp.
+    rnd.
     rnd.
     auto.
-    swap{2} 1 1.
-  sp.
-    seq 0 1 : true.
-    rnd{2}.
-    auto.
-    progress.
-    rewrite dexp_ll.  
     sp.
-    seq 1 1 : true.
-    call(_ : true).
+    seq 1 1 : (={x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1}).
+    call(_: (RO.mp{1} = RO_track.mp{2})).
     proc.
     if{2}.
     sp.
     if.
     progress.
-  admit.
-    admit.
     wp.
     rnd.
     auto.
+    auto.
+    if.
     progress.
-  search oget "_.[_<-_]".
-  admit.
+    wp.
+    rnd.
+    auto.
+    auto.
+    skip.
+    progress.  
+    seq 1 1 : (={choice,x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1}).
+    rnd.
+    auto.  
+    sp.  
+    if.
+    progress.
+    rewrite -grexpA //.
+    rewrite grexpA //.  
+    seq 1 1 : (={choice, y, t} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1} /\ x{1} = pubk{1}^r{1}).
+    rnd.
+    auto.
+    sp.
+    call(_: (RO.mp{1} = RO_track.mp{2})).
+    proc.
+    if{2}.
+    sp.
+    if.
+    progress.
+    wp.
+    rnd.
+    auto.
+    auto.
+    if.
+    progress.
+    wp.
+    rnd.
+    auto.
+    auto.
+    auto.  
+    progress.
+    rewrite grexpA //.
+  
     admit.
+    rewrite grexpA //.
+    sp.
+ call(_: (RO.mp{1} = RO_track.mp{2})).   
+    proc.
+    if{2}.
+    sp.
+    if.
+    progress.
+    wp.
+    rnd.
+    auto.
+    auto.
+    if.
+    progress.
+    wp.
+    rnd.
+    auto.
+    auto.
+    auto.
+    progress.
+    rewrite grexpA //.
     admit.
-    admit.
-    admit. 
-
-    (* use inline, inline*, swap{1} 2 3, swap{2} 2 -1 *)
+  (*admits are only for the glob Adv being equal problem*)
 qed.
 
 (* to use up to bad reasoning... *)
@@ -528,16 +579,16 @@ local lemma G1_G2_eq :
         (! RO_track.badHappened{1} => ={res})].
 proof.
   proc.
-  seq 5 5 : (={x1,x2,RO_track.mp}).
+  seq 5 5 : (={q1,q2,RO_track.mp,RO_track.bad_grp}).
   wp.
   rnd.
   rnd.
   auto.
-  progress.
-  admit.
-  admit.
-
-  call(_ : ={RO_track.bad_grp, RO_track.mp}).
+  seq 3 3 : (={x1, x2, q1, q2, RO_track.mp, RO_track.bad_grp, choice}).
+  wp.
+  rnd{2}.
+  rnd.
+  call(_: ={RO_track.bad_grp, RO_track.mp}).
   proc.
   if.
   progress.
@@ -550,12 +601,27 @@ proof.
   auto.
   if.
   progress.
+  wp; rnd.
+  auto.
+  auto.
+  auto.
+  progress.
+  by rewrite dtext_ll.
+  seq 2 0 :  (={x1, x2, q1, q2, RO_track.bad_grp, choice} /\ u{1} = y{2}).
+  if{1}.
   wp.
-  rnd.
+  rnd{1}.
   auto.
+  progress.
+  by rewrite dtext_ll.
+search "_.[_<-_]".
+  admit.
+  wp.
   auto.
-seq 1 1 : (={RO_track.bad_grp, RO_track.mp}).
-call(_ : (={RO_track.bad_grp, RO_track.mp})).
+  progress.
+  admit.
+  sp.
+  call(_ : (={RO_track.bad_grp, RO_track.mp})).
   proc.
   if.
   progress.
@@ -568,8 +634,7 @@ call(_ : (={RO_track.bad_grp, RO_track.mp})).
   auto.
   if.
   progress.
-  wp.
-  rnd.
+  wp; rnd.
   auto.
   auto.
   auto.
@@ -577,9 +642,10 @@ call(_ : (={RO_track.bad_grp, RO_track.mp})).
   admit.
   admit.
   admit.
-
  (* look at Sym encryption example, where I first use up to bad
-          reasoning *)
+  reasoning *)
+  admit.
+
 qed.
 
 local lemma G2_bad_ub &m :
@@ -588,14 +654,23 @@ local lemma G2_bad_ub &m :
 proof.
 byphoare => //.
   proc.
-
+  seq 2 : true.
+  rnd.
+  rnd.
+  auto.
 admit.
+  sp.
+  admit.
+  admit.
+  admit.
 qed.
 
 local lemma G1_G2 &m :
   `|Pr[G1.main() @ &m : res] - Pr[G2.main() @ &m : res]| <=
   Pr[LCDH(Adv2LCDHAdv(Adv)).main() @ &m : res].
-proof.
+  proof.
+  byphoare => //. 
+  
 admit. (* look Sym encryption example, where I first use up to bad
           reasoning *)
 qed.
@@ -640,13 +715,13 @@ local lemma G2_G3 &m :
   proof.
   byequiv => //.
     proc.
-  seq 5 5 : (={q1,q2, RO_track.bad_grp, RO_track.mp}).
+  seq 5 5 : (={q1,q2,RO_track.bad_grp, RO_track.mp}).
     wp.
     rnd.
     rnd.
     auto. 
-    seq 1 1 : (={q1,q2, RO_track.bad_grp, RO_track.mp}).
-    call(_ : ={RO_track.bad_grp, RO_track.mp}).
+    seq 1 1 : (={q1,q2,RO_track.bad_grp, RO_track.mp}).
+    call(_ : ={RO_track.bad_grp,RO_track.mp}).
     proc.
     if.
     progress.
@@ -663,15 +738,15 @@ local lemma G2_G3 &m :
     rnd.
     auto.
     auto.
-    auto.
-    progress.  
+    auto.  
    seq 3 3 : (={q1, q2, c, RO_track.bad_grp, RO_track.mp, choice}).
     wp.
-    rnd.
+    rnd{2}.
+    rnd{1}(fun x => x +^ t{1}).
     rnd.
     auto.
     progress.
-  (* one time pad refresher *)
+    rewrite dtext_ll //.
     admit.
     call(_ : ={RO_track.bad_grp, RO_track.mp}).
     proc.
@@ -700,24 +775,89 @@ local lemma G3_true &m :
   Pr[G3.main() @ &m : res] = 1%r / 2%r.
   proof.
   byphoare => //.
+    proc.  
+    seq 2 : (true) (1%r/2%r).
+    rnd.
+    rnd.
+    auto.
+    rnd.
+    rnd.
+    auto.
+    progress.
+    by rewrite dexp_ll.
+    by rewrite dexp_ll.
+    sp.  
+    seq 1 : (true) (1%r/2%r).
+    call(_: true).
     proc.
-    inline*.  
-    seq 5 : (true) (1%r/2%r).
+    if.
+    sp.
+    if.
+    wp.
+    rnd.
+    auto.
+    auto.
+    if.
+    wp.
+    rnd.
+    auto.
+    auto.
+    auto.
+  (* error when trying to call choose 
+    call(_: true); [apply Adv_choose_ll]. *)
+    simplify; call(_: true).
+    progress.
+   (* not sure what to pass in for the proc on the abstract function
+    proc (Adv_guess_ll).  *)
+    admit.
+    proc.
+    if.
+    sp.
+    if.
+    wp.
+    rnd.
+    auto; progress.
+    by rewrite dtext_ll.
+    auto.
+    if.
+    wp.
+    rnd.
+    auto; progress.
+    by rewrite dtext_ll.
+    auto.
+    auto.
+    seq 3 : (true) (1%r/2%r).
     wp.
     rnd.
     rnd.
-    skip.
-    progress.
+    auto.
     wp.
     rnd.
     rnd.
     auto.
     progress.
-  admit.
+    by rewrite dtext_ll.
+    (* need to show {0,1} distribution is lossless? *)
     admit.
+  (* can't use call without probability 1 *)
     admit.
-    admit.
-  admit.
+
+hoare.
+    wp.
+    rnd.
+    rnd.
+    auto.
+    progress.
+hoare. 
+    call(_: true).  
+    progress.
+    auto.
+    progress.
+hoare.
+    rnd.
+    rnd.
+    auto.
+    progress.
 qed.
 
 (* sequence of games:
@@ -730,11 +870,9 @@ lemma INDCPA_Sec &m :
   Pr[LCDH(Adv2LCDHAdv(Adv)).main() @ &m : res].
   proof.
   byphoare => //.
-    proc.
-    call(_: true).
-    admit.
-  
-admit.
+    rewrite -(G3_true &m) -(G2_G3 &m) (INDCPA_HEG_G1 &m)//.
+    (* this is exactly lemma G1_G2 but I can't get it to rewrite that way *)
+  admit.
 qed.
 
 end section.
