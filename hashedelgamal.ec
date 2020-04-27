@@ -170,7 +170,6 @@ module (HEG : ENC) (RO : RO) ={
     var u : text;
     r <$ dexp;
 
-      (* Need to define pubk and privk. pubk = g ^ q and privk = q *)
     u <@ RO.f(pubk ^ r);
 
     (*pubk ^ r = (g ^ q) ^ r = g ^ (q * r)*)
@@ -461,26 +460,24 @@ local lemma INDCPA_HEG_G1 &m :
     rnd.
     auto.
     sp.
-    seq 1 1 : (={x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1}).
+    seq 1 1 : (={glob Adv, x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1}).
     call(_: (RO.mp{1} = RO_track.mp{2})).
     proc.
     if{2}.
     sp.
     if.
     progress.
-    wp.
-    rnd.
+    wp; rnd.
     auto.
     auto.
     if.
     progress.
-    wp.
-    rnd.
+    wp; rnd.
     auto.
     auto.
     skip.
     progress.  
-    seq 1 1 : (={choice,x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1}).
+    seq 1 1 : (={glob Adv, choice,x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1}).
     rnd.
     auto.  
     sp.  
@@ -488,7 +485,7 @@ local lemma INDCPA_HEG_G1 &m :
     progress.
     rewrite -grexpA //.
     rewrite grexpA //.  
-    seq 1 1 : (={choice, y, t} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1} /\ x{1} = pubk{1}^r{1}).
+    seq 1 1 : (={glob Adv, choice, y, t} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1} /\ x{1} = pubk{1}^r{1}).
     rnd.
     auto.
     sp.
@@ -511,8 +508,6 @@ local lemma INDCPA_HEG_G1 &m :
     auto.  
     progress.
     rewrite grexpA //.
-  
-    admit.
     rewrite grexpA //.
     sp.
  call(_: (RO.mp{1} = RO_track.mp{2})).   
@@ -534,7 +529,6 @@ local lemma INDCPA_HEG_G1 &m :
     auto.
     progress.
     rewrite grexpA //.
-    admit.
   (*admits are only for the glob Adv being equal problem*)
 qed.
 
@@ -558,7 +552,9 @@ local module G2 = {
 
       (x1,x2) <@ A.choose(g ^ q1);
 
-      choice <$ {0,1};
+        choice <$ {0,1};
+
+      t <- (choice ? x1 : x2);
 
       
       y <$ dtext;   
@@ -578,99 +574,70 @@ local lemma G1_G2_eq :
         ={RO_track.badHappened} /\
         (! RO_track.badHappened{1} => ={res})].
 proof.
-  proc.
-  seq 5 5 : (={q1,q2,RO_track.mp,RO_track.bad_grp}).
-  wp.
-  rnd.
-  rnd.
-  auto.
-  seq 3 3 : (={x1, x2, q1, q2, RO_track.mp, RO_track.bad_grp, choice}).
-  wp.
-  rnd{2}.
-  rnd.
-  call(_: ={RO_track.bad_grp, RO_track.mp}).
-  proc.
-  if.
-  progress.
-  sp.
-  if.
-  progress.
-  wp.
-  rnd.
-  auto.
-  auto.
-  if.
-  progress.
-  wp; rnd.
-  auto.
-  auto.
-  auto.
-  progress.
-  by rewrite dtext_ll.
-  seq 2 0 :  (={x1, x2, q1, q2, RO_track.bad_grp, choice} /\ u{1} = y{2}).
-  if{1}.
-  wp.
-  rnd{1}.
-  auto.
-  progress.
-  by rewrite dtext_ll.
-search "_.[_<-_]".
-  admit.
-  wp.
-  auto.
-  progress.
-  admit.
-  sp.
-  call(_ : (={RO_track.bad_grp, RO_track.mp})).
-  proc.
-  if.
-  progress.
-  sp.
-  if.
-  progress.
-  wp.
-  rnd.
-  auto.
-  auto.
-  if.
-  progress.
-  wp; rnd.
-  auto.
-  auto.
-  auto.
-  progress.
-  admit.
-  admit.
-  admit.
  (* look at Sym encryption example, where I first use up to bad
   reasoning *)
   admit.
+qed.
 
+local lemma RO_LCDHAdv (q1 q2 : exp) :
+equiv[RO_track.f ~ Adv2LCDHAdv(Adv).RO_track.f :
+   ={x} /\
+   RO_track.badHappened{1} =
+   (g ^ (q1 * q2) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1 * q2)  ==>
+   ={res} /\
+   RO_track.badHappened{1} =
+   (g ^ (q1 * q2) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1 * q2)].
+ proof.
+   proc.
+   if{1}.
+   sp. 
+   if.
+   progress.
+   auto.
+   progress.
+ search dom.
+   rewrite mem_fdom mem_set //.
+   skip; progress.
+   by rewrite mem_fdom H.
+   if.
+   progress.
+   auto.
+   progress.
+   rewrite !mem_fdom mem_set.
+   smt().
+   auto. 
 qed.
 
 local lemma G2_bad_ub &m :
   Pr[G2.main() @ &m : RO_track.badHappened] =
   Pr[LCDH(Adv2LCDHAdv(Adv)).main() @ &m : res].
 proof.
-byphoare => //.
+byequiv => //.
   proc.
-  seq 2 : true.
-  rnd.
-  rnd.
+  inline*.
+  seq 5 5 : (={q1, q2} /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1{2} * q2{2}) /\ grp1{2} = g^q1{2} /\ grp2{2} = g^q2{2} /\ RO_track.badHappened{1} = (g ^ (q1{2} * q2{2}) \in fdom Adv2LCDHAdv.RO_track.mp{2})).
   auto.
-admit.
-  sp.
-  admit.
-  admit.
-  admit.
+  progress.
+search fdom.
+  rewrite mem_fdom mem_empty //.
+wp.
+exlim q1{1} => q1_L.
+exlim q2{1} => q2_L.
+call(_: RO_track.badHappened{1} = (g ^ (q1_L * q2_L) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1_L * q2_L)).
+  apply (RO_LCDHAdv q1_L q2_L).
+  wp.
+  rnd.
+  wp.
+  rnd.
+  call(_: RO_track.badHappened{1} = (g ^ (q1_L * q2_L) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1_L * q2_L)).
+  apply (RO_LCDHAdv q1_L q2_L).
+  auto.
 qed.
 
 local lemma G1_G2 &m :
   `|Pr[G1.main() @ &m : res] - Pr[G2.main() @ &m : res]| <=
   Pr[LCDH(Adv2LCDHAdv(Adv)).main() @ &m : res].
-  proof.
-  byphoare => //. 
-  
+  proof.  
 admit. (* look Sym encryption example, where I first use up to bad
           reasoning *)
 qed.
@@ -720,7 +687,7 @@ local lemma G2_G3 &m :
     rnd.
     rnd.
     auto. 
-    seq 1 1 : (={q1,q2,RO_track.bad_grp, RO_track.mp}).
+    seq 1 1 : (={glob Adv, q1,q2,RO_track.bad_grp, RO_track.mp}).
     call(_ : ={RO_track.bad_grp,RO_track.mp}).
     proc.
     if.
@@ -739,15 +706,18 @@ local lemma G2_G3 &m :
     auto.
     auto.
     auto.  
-   seq 3 3 : (={q1, q2, c, RO_track.bad_grp, RO_track.mp, choice}).
+   seq 4 3 : (={glob Adv, q1, q2, c, RO_track.bad_grp, RO_track.mp, choice}).
     wp.
-    rnd{2}.
-    rnd{1}(fun x => x +^ t{1}).
+  rnd(fun x => t{1} +^ x).
+    wp.  
     rnd.
     auto.
     progress.
-    rewrite dtext_ll //.
-    admit.
+    rewrite -textA textR textC textI//.
+    apply dtext_uni => //.
+    rewrite dtext_fu.
+    rewrite dtext_fu.
+    rewrite -textA textR textC textI //.  
     call(_ : ={RO_track.bad_grp, RO_track.mp}).
     proc.
     if.
@@ -766,98 +736,41 @@ local lemma G2_G3 &m :
     auto.
     auto.
     auto.
-    progress.
-    admit.
-    (* one-time pad, just like in labs *)
+qed.
+
+local lemma RO_track_f_ll : islossless RO_track.f.
+proof.
+  proc.
+  if.
+  sp; if.
+  auto; progress; by rewrite dtext_ll.
+  auto.
+  if.
+  auto; progress; by rewrite dtext_ll.
+  auto.
 qed.
 
 local lemma G3_true &m :
   Pr[G3.main() @ &m : res] = 1%r / 2%r.
   proof.
   byphoare => //.
-    proc.  
-    seq 2 : (true) (1%r/2%r).
-    rnd.
-    rnd.
-    auto.
-    rnd.
-    rnd.
-    auto.
-    progress.
-    by rewrite dexp_ll.
-    by rewrite dexp_ll.
-    sp.  
-    seq 1 : (true) (1%r/2%r).
+    proc.
+    swap 7 3.
+    rnd (pred1 guess).
     call(_: true).
-    proc.
-    if.
-    sp.
-    if.
+    apply Adv_guess_ll.
+    apply RO_track_f_ll.
     wp.
     rnd.
-    auto.
-    auto.
-    if.
-    wp.
-    rnd.
-    auto.
-    auto.
-    auto.
-  (* error when trying to call choose 
-    call(_: true); [apply Adv_choose_ll]. *)
-    simplify; call(_: true).
-    progress.
-   (* not sure what to pass in for the proc on the abstract function
-    proc (Adv_guess_ll).  *)
-    admit.
-    proc.
-    if.
-    sp.
-    if.
-    wp.
-    rnd.
-    auto; progress.
-    by rewrite dtext_ll.
-    auto.
-    if.
-    wp.
-    rnd.
-    auto; progress.
-    by rewrite dtext_ll.
-    auto.
-    auto.
-    seq 3 : (true) (1%r/2%r).
-    wp.
-    rnd.
-    rnd.
-    auto.
-    wp.
-    rnd.
-    rnd.
+    call(_: true).
+    apply Adv_choose_ll.
+    apply RO_track_f_ll.
     auto.
     progress.
-    by rewrite dtext_ll.
-    (* need to show {0,1} distribution is lossless? *)
-    admit.
-  (* can't use call without probability 1 *)
-    admit.
-
-hoare.
-    wp.
-    rnd.
-    rnd.
-    auto.
-    progress.
-hoare. 
-    call(_: true).  
-    progress.
-    auto.
-    progress.
-hoare.
-    rnd.
-    rnd.
-    auto.
-    progress.
+    by rewrite dexp_ll.
+    smt. (* prove that {0,1}'s result is 1/2*)
+    trivial.
+    by rewrite dtext_ll.  
 qed.
 
 (* sequence of games:
@@ -869,10 +782,7 @@ lemma INDCPA_Sec &m :
   `|Pr[INDCPA(HEG, Adv).main() @ &m : res] - 1%r / 2%r| <=
   Pr[LCDH(Adv2LCDHAdv(Adv)).main() @ &m : res].
   proof.
-  byphoare => //.
-    rewrite -(G3_true &m) -(G2_G3 &m) (INDCPA_HEG_G1 &m)//.
-    (* this is exactly lemma G1_G2 but I can't get it to rewrite that way *)
-  admit.
+    rewrite -(G3_true &m) -(G2_G3 &m) (INDCPA_HEG_G1 &m) (G1_G2 &m)//.
 qed.
 
 end section.
