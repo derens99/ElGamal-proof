@@ -1,4 +1,5 @@
 require import AllCore Distr SmtMap DBool FSet.
+require import StdOrder.  import RealOrder.
 
 type group.
 
@@ -576,6 +577,38 @@ local lemma G1_G2_eq :
 proof.
  (* look at Sym encryption example, where I first use up to bad
   reasoning *)
+  proc.
+  inline*.
+  seq 5 5 :  (={q1, q2, RO_track.mp, RO_track.bad_grp, RO_track.badHappened} /\ !RO_track.badHappened{1}).
+  auto.
+  seq 3 3 : (={q1, q2, RO_track.mp, RO_track.bad_grp, RO_track.badHappened, t, choice} /\ !RO_track.badHappened{1}).
+  wp.
+  rnd.
+  call(_: ={RO_track.mp, RO_track.bad_grp, RO_track.badHappened}).
+  proc.
+  if.
+  progress.
+  sp.
+  if; progress.
+  auto; progress.
+  if; progress.
+  auto.
+  auto; progress.
+  admit.
+  seq 3 2 : (={q1, q2, RO_track.mp, RO_track.bad_grp, t, choice} /\ (! RO_track.badHappened{1} => ={RO_track.mp, y, c})).
+  if{1}.
+  wp.
+  rnd.
+  auto.
+  progress.
+  admit.
+  admit.
+  admit.
+  auto.
+  progress.
+  by rewrite dtext_ll.
+  admit.
+  admit.
   admit.
 qed.
 
@@ -637,7 +670,11 @@ qed.
 local lemma G1_G2 &m :
   `|Pr[G1.main() @ &m : res] - Pr[G2.main() @ &m : res]| <=
   Pr[LCDH(Adv2LCDHAdv(Adv)).main() @ &m : res].
-  proof.  
+  proof.
+    rewrite (RealOrder.ler_trans Pr[G2.main() @ &m : RO_track.badHappened]); last 1 apply (G2_bad_ub &m).  
+  byequiv(_ : true ==> (={badHappened}(RO_track,RO_track)) /\ (! RO_track.badHappened{2} => ={res})) : (RO_track.badHappened) => //.
+    by conseq G1_G2_eq.
+  
 admit. (* look Sym encryption example, where I first use up to bad
           reasoning *)
 qed.
