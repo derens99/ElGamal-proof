@@ -119,7 +119,7 @@ module type ENC (RO : RO) = {
   proc dec(privk : exp, c : cipher) : text {RO.f}
 }.
 
-(* concrete example of elgamal *)
+
       (* Random Oracle *)
 
 
@@ -207,51 +207,39 @@ lemma correctness : phoare[Cor(HEG).main : true ==> res] = 1%r.
     seq 13: (x1 = g ^ (q * r) /\ x2 = x1 /\ t = x /\ RO.mp.[x1] = Some u /\ u0 = t +^ u).
     auto.
     seq 3: (pubk0 = g ^ q /\ privk = q).
-    wp.
     auto.
-    wp.
     auto.
     progress.
     apply dexp_ll.
     wp.
     seq 2: (pubk0 = g ^ q /\ privk = q /\ t = x).
     auto.
-    auto.
-    progress.
+    auto; progress.
     apply dexp_ll.
-    sp.
-    if.
+    sp; if.
     auto.
     progress.
     apply dtext_ll.
     by rewrite grexpA.
-      by rewrite !grexpA expC.
+    by rewrite !grexpA expC.
     rewrite get_set_sameE.
     by rewrite oget_some.
-    auto.
-    progress.
+    auto; progress.
     by rewrite grexpA.
     by rewrite !grexpA expC.
     by rewrite get_some.
     hoare.
-    simplify.
-    auto.
+    simplify; auto.
     trivial.
     hoare.
     auto.
     trivial.
     rcondf 1.
-auto; progress.
-smt().
-auto.
-      progress.
-    rewrite H oget_some.
-      rewrite -textA.
-      rewrite -textC.
-    rewrite- textA.
-    rewrite textR.
-    rewrite textC textI.
-    trivial.
+    auto; progress.
+    smt().
+    auto; progress.
+    rewrite H oget_some -textA -textC -textA textR.
+    by rewrite textC textI.
     hoare.
     auto.
     seq 1: true.
@@ -259,18 +247,14 @@ auto.
     sp.
     seq 1: (privk = q /\ pubk = g ^ q /\ pubk0 = pubk /\ t = x).
     auto.
-    sp.
-    if.
-    auto.
-    progress.
-     by rewrite grexpA.
+    sp; if.
+    auto; progress.
+    by rewrite grexpA.
     by rewrite !grexpA expC.
-      rewrite get_some.
-    search  dom.
+    rewrite get_some.
     smt(mem_set).
     by rewrite get_set_sameE oget_some.
-    auto.
-    progress.
+    auto;progress.
     rewrite grexpA.
     auto.
     by rewrite !grexpA expC.
@@ -386,9 +370,7 @@ local module RO_track : RO = {
   var bad_grp : group
 
   proc init() : unit = {
-(*
-    mp <- empty;  (* empty map *)
-*)
+      (* init moved to be inline of games *)
   }
 
   proc f(x : group) : text = {
@@ -428,15 +410,12 @@ local module G1 = {
 
         t <- (choice ? x1 : x2);
       (* randomly choosing a u inlined *)
-(*
-        u <@ RO.f(pubk ^ r); u was just g ^ (q1 * q2)
-*)
-      if (g ^ (q1 * q2) \notin RO_track.mp) { (* not in mp's domain *)
-         y <$ dtext;   (* updating mp so as before but value of *)
-         RO_track.mp.[g ^ (q1 * q2)] <- y;  (* x is what we randomly picked *)
+      if (g ^ (q1 * q2) \notin RO_track.mp) {
+         y <$ dtext;
+         RO_track.mp.[g ^ (q1 * q2)] <- y;
       }
 
-      u <- oget RO_track.mp.[g ^ (q1 * q2)]; (* mp.[x] is either None or Some t *)
+      u <- oget RO_track.mp.[g ^ (q1 * q2)];
 
       c <- (g ^ q2, t +^ u);
 
@@ -453,83 +432,56 @@ local lemma INDCPA_HEG_G1 &m :
     proc.
     inline*.
     swap{2} 3 -2.
-  swap{1} 8 -5.
+    swap{1} 8 -5.
     sp.
     seq 2 2 : (q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2}).
-    wp.
-    rnd.
-    rnd.
     auto.
     sp.
-    seq 1 1 : (={glob Adv, x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1}).
+    seq 1 1 : (={glob Adv, x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2}
+      /\ pubk{1} = g^q{1}).
     call(_: (RO.mp{1} = RO_track.mp{2})).
     proc.
     if{2}.
     sp.
-    if.
-    progress.
+    if; progress.
+    wp; rnd.
+    auto.
+    if; progress.
     wp; rnd.
     auto.
     auto.
-    if.
-    progress.
-    wp; rnd.
+    seq 1 1 : (={glob Adv, choice,x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\
+      RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1}).
     auto.
-    auto.
-    skip.
-    progress.
-    seq 1 1 : (={glob Adv, choice,x1,x2} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1}).
-    rnd.
-    auto.
-    sp.
-    if.
-    progress.
-    rewrite -grexpA //.
-    rewrite grexpA //.
-    seq 1 1 : (={glob Adv, choice, y, t} /\ q{1} = q1{2} /\ r{1} = q2{2} /\ RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1} /\ x{1} = pubk{1}^r{1}).
-    rnd.
+    sp; if; progress.
+    by rewrite -grexpA.
+    by rewrite grexpA.
+    seq 1 1 : (={glob Adv, choice, y, t} /\ q{1} = q1{2} /\ r{1} = q2{2} /\
+      RO.mp{1} = RO_track.mp{2} /\ pubk{1} = g^q{1} /\ x{1} = pubk{1}^r{1}).
     auto.
     sp.
     call(_: (RO.mp{1} = RO_track.mp{2})).
     proc.
     if{2}.
     sp.
-    if.
-    progress.
-    wp.
-    rnd.
+    if; progress.
     auto.
+    if; progress.
     auto.
-    if.
-    progress.
-    wp.
-    rnd.
-    auto.
-    auto.
-    auto.
-    progress.
+    auto; progress.
     rewrite grexpA //.
     rewrite grexpA //.
     sp.
- call(_: (RO.mp{1} = RO_track.mp{2})).
+    call(_: (RO.mp{1} = RO_track.mp{2})).
     proc.
     if{2}.
     sp.
-    if.
-    progress.
-    wp.
-    rnd.
+    if; progress.
     auto.
+    if; progress.
     auto.
-    if.
-    progress.
-    wp.
-    rnd.
-    auto.
-    auto.
-    auto.
-    progress.
-    rewrite grexpA //.
+    auto; progress.
+    by rewrite grexpA.
   (*admits are only for the glob Adv being equal problem*)
 qed.
 
@@ -585,7 +537,7 @@ proof.
      RO_track.mp{1} = empty).
   auto.
   seq 3 3 :
-    (={q1, q2, RO_track.mp, RO_track.bad_grp, RO_track.badHappened, t, choice} /\
+    (={q1, q2, RO_track.mp, RO_track.bad_grp, RO_track.badHappened, t, choice, glob Adv} /\
      RO_track.bad_grp{1} = g ^ (q1{1} * q2{1}) /\
      (RO_track.badHappened{1} <=> g ^ (q1{1} * q2{1}) \in RO_track.mp{1})).
   wp.
@@ -599,52 +551,90 @@ proof.
   sp.
   if; progress.
   auto; progress.
-  admit.
+  by rewrite mem_set.
   if; progress.
   auto; progress.
-  admit.
-  admit.
+  by rewrite mem_set H3.
+  smt(mem_set).
   auto; progress.
   trivial.
   smt(mem_empty).
   seq 3 2 :
-    (={RO_track.bad_grp, choice} /\
+    (={RO_track.bad_grp, choice, glob Adv} /\
      (! RO_track.badHappened{1} =>
       ={c} /\
       g ^ (q1{1} * q2{1}) \notin RO_track.mp{2} /\
       RO_track.mp{1} = RO_track.mp{2}.[g ^ (q1{1} * q2{1}) <- y{1}])).
   if{1}.
-  wp.
-  rnd.
-  auto.
-  progress.
-  admit.
+  wp; auto; progress.
+  search "_.[_<-_]" "_.[_]".
+  rewrite get_set_eqE.
+  trivial.
+  by rewrite oget_some.
   wp.
   rnd{2}.
   skip; progress.
   by rewrite dtext_ll.
   trivial.
-  trivial.
-
-
-  admit.
-  admit.
-  auto.
-  progress.
-  by rewrite dtext_ll.
-  admit.
-  admit.
-  admit.
+    trivial.
+  exlim c{1} => c_L.
+  exlim c{2} => c_R.
+    call(_: ={RO_track.badHappened, RO_track.bad_grp, glob Adv} /\ (! RO_track.badHappened{1} =>
+      ={RO_track.mp} /\ c_L = c_R /\  c_L = arg{1} /\ c_R = arg{2}) ==>
+      (! RO_track.badHappened{1} => ={res})).
+    proc (RO_track.badHappened) (={RO_track.mp} /\ ={RO_track.badHappened, RO_track.bad_grp})
+             (RO_track.badHappened{1}).
+    progress.
+    smt().
+    smt().             
+    progress.
+admit.
+    progress.
+    apply (Adv_guess_ll RO).
+    apply H.
+    proc.
+    if; progress.             
+    sp; if; progress.
+    auto; progress.
+    if; progress.  
+    auto; progress.
+    progress.
+    proc.             
+    if.
+    sp; if.
+    auto; progress.
+    by rewrite dtext_ll.
+    auto.
+    if.
+    auto; progress.
+    by rewrite dtext_ll.
+    auto; progress.
+    progress.
+    proc.
+    if.
+    sp; if.
+    auto; progress.
+    by rewrite dtext_ll.
+    auto.
+    if; progress.
+    auto; progress.
+    by rewrite dtext_ll.
+    auto; progress.
+admit.
+admit.             
+    smt().
+admit.
+    smt().             
 qed.
 
 local lemma RO_LCDHAdv (q1 q2 : exp) :
 equiv[RO_track.f ~ Adv2LCDHAdv(Adv).RO_track.f :
    ={x} /\
    RO_track.badHappened{1} =
-   (g ^ (q1 * q2) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1 * q2)  ==>
-   ={res} /\
-   RO_track.badHappened{1} =
-   (g ^ (q1 * q2) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1 * q2)].
+   (g ^ (q1 * q2) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\
+     RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1 * q2)  ==>
+     ={res} /\ RO_track.badHappened{1} = (g ^ (q1 * q2) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\
+     RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1 * q2)].
  proof.
    proc.
    if{1}.
@@ -673,21 +663,20 @@ proof.
 byequiv => //.
   proc.
   inline*.
-  seq 5 5 : (={q1, q2} /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1{2} * q2{2}) /\ grp1{2} = g^q1{2} /\ grp2{2} = g^q2{2} /\ RO_track.badHappened{1} = (g ^ (q1{2} * q2{2}) \in fdom Adv2LCDHAdv.RO_track.mp{2})).
-  auto.
-  progress.
-search fdom.
+  seq 5 5 : (={q1, q2} /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\
+    RO_track.bad_grp{1} = g ^ (q1{2} * q2{2}) /\ grp1{2} = g^q1{2} /\ grp2{2} = g^q2{2} /\
+    RO_track.badHappened{1} = (g ^ (q1{2} * q2{2}) \in fdom Adv2LCDHAdv.RO_track.mp{2})).
+  auto; progress.
   rewrite mem_fdom mem_empty //.
-wp.
-exlim q1{1} => q1_L.
-exlim q2{1} => q2_L.
-call(_: RO_track.badHappened{1} = (g ^ (q1_L * q2_L) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1_L * q2_L)).
+  wp.
+  exlim q1{1} => q1_L.
+  exlim q2{1} => q2_L.
+  call(_: RO_track.badHappened{1} = (g ^ (q1_L * q2_L) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\
+    RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1_L * q2_L)).
   apply (RO_LCDHAdv q1_L q2_L).
-  wp.
-  rnd.
-  wp.
-  rnd.
-  call(_: RO_track.badHappened{1} = (g ^ (q1_L * q2_L) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\ RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1_L * q2_L)).
+  auto.
+  call(_: RO_track.badHappened{1} = (g ^ (q1_L * q2_L) \in fdom Adv2LCDHAdv.RO_track.mp{2}) /\
+    RO_track.mp{1} = Adv2LCDHAdv.RO_track.mp{2} /\ RO_track.bad_grp{1} = g ^ (q1_L * q2_L)).
   apply (RO_LCDHAdv q1_L q2_L).
   auto.
 qed.
@@ -695,7 +684,7 @@ qed.
 local lemma G1_G2 &m :
   `|Pr[G1.main() @ &m : res] - Pr[G2.main() @ &m : res]| <=
   Pr[LCDH(Adv2LCDHAdv(Adv)).main() @ &m : res].
-  proof.
+proof.
     rewrite (RealOrder.ler_trans Pr[G2.main() @ &m : RO_track.badHappened]).
     byequiv
     (_ : true ==>
@@ -704,12 +693,8 @@ local lemma G1_G2 &m :
      (RO_track.badHappened) => //.
     conseq G1_G2_eq => //.
     progress; smt().
-(*
-    by rewrite -H.
-    by rewrite H.
-*)
     by rewrite RealOrder.lerr_eq (G2_bad_ub &m).
-  qed.
+qed.
 
 local module G3 = {
     module A = Adv(RO_track)
@@ -719,7 +704,6 @@ local module G3 = {
       var q1, q2 : exp;
       var t, y (*,t*) : text;
 
-      (* key_gen but inlined *)
        q1 <$ dexp;
        q2 <$ dexp;
 
@@ -731,12 +715,7 @@ local module G3 = {
 
         choice <$ {0,1};
 
-        (* enc Inlined *)
-
-(*
-        t <- (choice ? x1 : x2);
-*)
-        y <$ dtext;   (* updating mp so as before but value of *)
+        y <$ dtext;   
 
         c <- (g ^ q2, y); (* because y is one-time pad *)
 
@@ -751,58 +730,32 @@ local lemma G2_G3 &m :
   proof.
   byequiv => //.
     proc.
-  seq 5 5 : (={q1,q2,RO_track.bad_grp, RO_track.mp}).
-    wp.
-    rnd.
-    rnd.
+    seq 5 5 : (={q1,q2,RO_track.bad_grp, RO_track.mp}).
     auto.
     seq 1 1 : (={glob Adv, q1,q2,RO_track.bad_grp, RO_track.mp}).
     call(_ : ={RO_track.bad_grp,RO_track.mp}).
     proc.
-    if.
-    progress.
-    sp.
-    if.
-    progress.
+    if; progress.
+    sp; if; progress.
+    auto.
+    if; progress.
+    auto.
+    auto.
+    seq 4 3 : (={glob Adv, q1, q2, c, RO_track.bad_grp, RO_track.mp, choice}).
     wp.
-    rnd.
-    auto.
-    auto.
-    if.
-    progress.
-    wp.
-    rnd.
-    auto.
-    auto.
-    auto.
-   seq 4 3 : (={glob Adv, q1, q2, c, RO_track.bad_grp, RO_track.mp, choice}).
-    wp.
-  rnd(fun x => t{1} +^ x).
-    wp.
-    rnd.
-    auto.
-    progress.
-    rewrite -textA textR textC textI//.
+    rnd(fun x => t{1} +^ x).
+    auto; progress.
+    by rewrite -textA textR textC textI.
     apply dtext_uni => //.
     rewrite dtext_fu.
     rewrite dtext_fu.
-    rewrite -textA textR textC textI //.
+    by rewrite -textA textR textC textI.
     call(_ : ={RO_track.bad_grp, RO_track.mp}).
     proc.
-    if.
-    progress.
-    sp.
-    if.
-    progress.
-    wp.
-    rnd.
+    if; progress.
+    sp; if; progress.
     auto.
-    auto.
-    if.
-    progress.
-    wp.
-    rnd.
-    auto.
+    if; progress.
     auto.
     auto.
 qed.
@@ -829,17 +782,15 @@ local lemma G3_true &m :
     call(_: true).
     apply Adv_guess_ll.
     apply RO_track_f_ll.
-    wp.
-    rnd.
+    auto.
     call(_: true).
     apply Adv_choose_ll.
     apply RO_track_f_ll.
-    auto.
-    progress.
+    auto; progress.
     by rewrite dexp_ll.
+    by rewrite dtext_ll.
     smt. (* prove that {0,1}'s result is 1/2*)
     trivial.
-    by rewrite dtext_ll.
 qed.
 
 (* sequence of games:
