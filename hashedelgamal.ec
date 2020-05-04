@@ -540,16 +540,13 @@ proof.
     (={q1, q2, RO_track.mp, RO_track.bad_grp, RO_track.badHappened, t, choice, glob Adv} /\
      RO_track.bad_grp{1} = g ^ (q1{1} * q2{1}) /\
      (RO_track.badHappened{1} <=> g ^ (q1{1} * q2{1}) \in RO_track.mp{1})).
-  wp.
-  rnd.
+  auto.
   call
   (_ : ={RO_track.mp, RO_track.bad_grp, RO_track.badHappened} /\
        (RO_track.badHappened{1} <=> RO_track.bad_grp{1} \in RO_track.mp{1})).
   proc.
-  if.
-  progress.
-  sp.
   if; progress.
+  sp; if; progress.
   auto; progress.
   by rewrite mem_set.
   if; progress.
@@ -563,11 +560,10 @@ proof.
     (={RO_track.bad_grp, choice, glob Adv, RO_track.badHappened} /\
      (! RO_track.badHappened{1} =>
       ={c} /\
-      g ^ (q1{1} * q2{1}) \notin RO_track.mp{2} /\
-      RO_track.mp{1} = RO_track.mp{2}.[g ^ (q1{1} * q2{1}) <- y{1}])).
+      RO_track.bad_grp{1} \notin RO_track.mp{2} /\
+      RO_track.mp{1} = RO_track.mp{2}.[RO_track.bad_grp{1} <- y{1}])).
   if{1}.
   wp; auto; progress.
-  search "_.[_<-_]" "_.[_]".
   rewrite get_set_eqE.
   trivial.
   by rewrite oget_some.
@@ -577,53 +573,65 @@ proof.
   by rewrite dtext_ll.
   trivial.
     trivial.
-  exlim c{1} => c_L.
-  exlim c{2} => c_R.
-    call(_: ={RO_track.badHappened, RO_track.bad_grp, glob Adv} /\ (! RO_track.badHappened{1} =>
-      ={RO_track.mp} /\ c_L = c_R /\  c_L = arg{1} /\ c_R = arg{2}) ==>
-      (! RO_track.badHappened{1} => ={res})).
-    proc (RO_track.badHappened) (={RO_track.mp} /\ ={RO_track.badHappened, RO_track.bad_grp})
-             (RO_track.badHappened{1}).
+  exlim y{1} => y_L.
+    call(_ :
+         ={RO_track.bad_grp, glob Adv, RO_track.badHappened} /\
+         (! RO_track.badHappened{1} =>
+          ={c} /\
+          RO_track.bad_grp{1} \notin RO_track.mp{2} /\
+          RO_track.mp{1} = RO_track.mp{2}.[RO_track.bad_grp{1} <- y_L]) ==>
+          ={RO_track.badHappened} /\ (! RO_track.badHappened{1} => ={res})).
+    proc (RO_track.badHappened) (* bad event in second game *)
+         (={RO_track.badHappened, RO_track.bad_grp} /\ (* when bad event not hold *)
+          RO_track.bad_grp{1} \notin RO_track.mp{2} /\
+          RO_track.mp{1} = RO_track.mp{2}.[RO_track.bad_grp{1} <- y_L])
+         (RO_track.badHappened{1}). (* when bad event holds *)
     progress.
     smt().
-    smt().             
+    smt().
+    smt(). 
     progress.
+    smt().       
     smt().
     progress.
     apply (Adv_guess_ll RO).
     apply H.
     proc.
     if; progress.             
-    sp; if; progress.
-    auto; progress.
-    if; progress.  
-    auto; progress.
-    progress.
-    proc.             
-    if.
-    sp; if.
-    auto; progress.
-    by rewrite dtext_ll.
-    auto; progress.
-    if.
-    auto; progress.
-    by rewrite dtext_ll.
-    auto; progress.
-    progress.
-    proc.
-    if.
-    sp; if.
-    auto; progress.
+    
+    sp. if{1}. if{2}. auto. auto. if{2}. auto; progress.
     by rewrite dtext_ll.
     auto; progress.
     if; progress.
+    smt(mem_set).
+    smt(mem_set).
+    auto; progress.
+    smt.
+    smt(mem_set).
+    by rewrite set_set_neqE.
+    auto; progress.         
+    by rewrite get_set_neqE.
+    progress.
+    proc.
+    if.
+    sp; if; progress.
+    auto; progress.
+    by rewrite dtext_ll.
+    if; progress.
+    auto; progress.
+    by rewrite dtext_ll.
+    progress.
+    proc.
+    if.
+    sp; if; progress.
+    auto; progress.
+    by rewrite dtext_ll.
+    if.
     auto; progress.
     by rewrite dtext_ll.
     auto; progress.
-admit.             
-    smt().
-admit.
-    smt().             
+    auto; progress.
+    smt().          
 qed.
 
 local lemma RO_LCDHAdv (q1 q2 : exp) :
