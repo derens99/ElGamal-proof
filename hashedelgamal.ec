@@ -560,7 +560,7 @@ proof.
   trivial.
   smt(mem_empty).
   seq 3 2 :
-    (={RO_track.bad_grp, choice, glob Adv} /\
+    (={RO_track.bad_grp, choice, glob Adv, RO_track.badHappened} /\
      (! RO_track.badHappened{1} =>
       ={c} /\
       g ^ (q1{1} * q2{1}) \notin RO_track.mp{2} /\
@@ -588,7 +588,7 @@ proof.
     smt().
     smt().             
     progress.
-admit.
+    smt().
     progress.
     apply (Adv_guess_ll RO).
     apply H.
@@ -604,7 +604,7 @@ admit.
     sp; if.
     auto; progress.
     by rewrite dtext_ll.
-    auto.
+    auto; progress.
     if.
     auto; progress.
     by rewrite dtext_ll.
@@ -615,12 +615,11 @@ admit.
     sp; if.
     auto; progress.
     by rewrite dtext_ll.
-    auto.
+    auto; progress.
     if; progress.
     auto; progress.
     by rewrite dtext_ll.
     auto; progress.
-admit.
 admit.             
     smt().
 admit.
