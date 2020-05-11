@@ -10,35 +10,32 @@ Proving ElGamal Encryption using EasyCrypt
 
 ### Hashed ElGamal
 
-(this has already been done in EasyCrypt, so please don't
- start by looking for an existing EasyCrypt proof)
-
 types:
 
 group
 
-  (e.g., int with +, so inverse is negation, and identity is 0)
+(e.g., int with +, so inverse is negation, and identity is 0)
 
-  binary operator ^^
+binary operator ^^
 
-    x ^^ y
-    associative (x ^^ y) ^^ z = x ^^ (y ^^ z)
+x ^^ y
+associative (x ^^ y) ^^ z = x ^^ (y ^^ z)
 
-  identity gid
+identity gid
 
-    x ^^ gid = x = gid ^^ x
+x ^^ gid = x = gid ^^ x
 
-  unary operator kinv  (won't acutally need this)
-    (kinv x) ^^ x = gid
-    x ^^ (kinv x) = gid
+unary operator kinv  (won't acutally need this)
+(kinv x) ^^ x = gid
+x ^^ (kinv x) = gid
 
 exp (exponent)
 
-  binary operator *
-  commutative & associative
-    x * y = y * x
+binary operator *
+commutative & associative
+x * y = y * x
 
-  distribution dexp
+distribution dexp
 
 connecting group and exp:
 
